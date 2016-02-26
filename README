@@ -1,5 +1,16 @@
 This app pulls DNS queries out of a postgres database, and the looks for their MAC addresses based on data from macdaddy, then interfaces with freeside to correlate those MAC addresses against subscriber ids, and logs it. The idea is to make this data easily accessible when someone asks who they've been connecting to, and eventually expose that information directly to the users. 
 
+Data flow that this interacts with:
+    Client makes a DNS request
+    DNS server logs that request to (dizzying chain of syslog daemons)
+    Log ends up in postgres in the Syslog database # I should probably rename that
+    This app ingests that data from the systemevents (default rsyslog adapter name)
+        to the dnslog table, after cleaning it and formatting it
+    It consults macdaddy, which is an IP -> MAC lookup tool, to get a MAC address
+    It then checks that MAC address and the request timestamp against the RADIUS
+        database, to find the user that logged in
+
 Requires packages:
+    # Not including those packages that are ported properly in virtualenv
     psycopg2
         This requires an OS package equivalent to postgresql-server-dev-all
