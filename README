@@ -1,0 +1,5 @@
+This app pulls DNS queries out of a postgres database, and the looks for their MAC addresses based on data from macdaddy, then interfaces with freeside to correlate those MAC addresses against subscriber ids, and logs it. The idea is to make this data easily accessible when someone asks who they've been connecting to, and eventually expose that information directly to the users. 
+
+Requires packages:
+    psycopg2
+        This requires an OS package equivalent to postgresql-server-dev-all
