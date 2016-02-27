@@ -14,3 +14,6 @@ Requires packages:
     # Not including those packages that are ported properly in virtualenv
     psycopg2
         This requires an OS package equivalent to postgresql-server-dev-all
+    easysnmp
+        Requires libsnmp-dev equivalent
+        

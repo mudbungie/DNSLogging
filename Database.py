@@ -49,22 +49,14 @@ class Database:
         cursor = self.connection.cursor()
         queryString = 'DELETE FROM systemevents WHERE id=' + str(logid)
         cursor.execute(queryString)
-        print(cursor.statusmessage)
+        #print(cursor.statusmessage)
         self.connection.commit()
         cursor.close()
 
     def insertIntoTable(self, values, table):
         # Takes a dict of values, matches keys to column name, returns a string
         #FIXME This should be dynamic to the column names
-        print('inserting')
-        #structure = 'INSERT INTO ' + table + ' (client, requested_name, timestamp, server, type) '
-        #valueString = ('VALUES (%s, %s, %s, %s, %s)',
-        #                        values['client'],
-        #                        values['requested_name'],
-        #                        values['date'],
-        #                        values['dnsserver'],
-        #                        values['type'],
-        #                        )
+        #print('inserting')
         cursor = self.connection.cursor()
         insert = cursor.mogrify('INSERT INTO ' + table + '(client, requested_name, ' + 
                         'timestamp, server, type) VALUES (%s, %s, %s, %s, %s)',

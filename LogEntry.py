@@ -4,6 +4,8 @@
 # Pull the necessary records from other databases and the like.
 # Write the data back into the database in a more usable format.
 
+from Host import Host
+
 class LogEntry:
     def __init__(self, record, database):
         # Takes a record from postgres, and the working DB
@@ -27,7 +29,8 @@ class LogEntry:
             self.purgeLog()
             return None
         else:
-            print(self.values['logtype'])
+            pass
+            #print(self.values['logtype'])
 
         # Back to encoding values
         self.values['date'] = record[2]
@@ -40,8 +43,9 @@ class LogEntry:
         except:
             print(record)
             raise
-        
-        self.recordQuery()
+
+        #self.getHostValues()        
+        self.saveRecord()
         self.purgeLog()
 
     def parseMessage(self):
@@ -50,17 +54,19 @@ class LogEntry:
         self.values['client'] = message[2]
         self.values['requested_name'] = message[3]
         self.values['type'] = message[4]
-        print(self.values['id'], self.values['client'], self.values['logtype'])
+        #print(self.values['id'], self.values['client'], self.values['logtype'])
 
-    def logCleaning(self):
-        # Reasons to purge the log
-        
-        self.recordQuery()
-        self.purgeLog()
+    def getHostValues(self):
+        # Initialize a Host object, pull relevant values out of it
+        host = Host(self.values['client'])
+        self.values['MAC'] = host.mac
+        self.values['userid'] = host.userid
+        print(self.values['MAC'])
+        print(self.values['userid'])
 
     def purgeLog(self):
         # Remove log from the syslog ingress table
-        print('Deleting log entry with id ' + str(self.values['id']))
+        #print('Deleting log entry with id ' + str(self.values['id']))
         self.database.deleteLogById(self.values['id'])
 
     def constructInsert(self):
@@ -76,8 +82,8 @@ class LogEntry:
                                 ])
         insert = structure + valueString
         return insert
-    def recordQuery(self):
+    def saveRecord(self):
         # Writes the query back to the database all cleaned up, and in a new format
-        print('recording')
+        #print('recording')
         self.database.insertIntoTable(self.values, 'dnslog')
         
