@@ -33,8 +33,8 @@ class LogEntry:
             #print(self.values['logtype'])
 
         # Back to encoding values
-        self.values['date'] = record[2]
-        self.values['dnsserver'] = record[6]
+        self.values['timestamp'] = record[2]
+        self.values['dns_server'] = record[6]
         
         # Message has the meat of the data, so parse it
         self.values['message'] = record[7]
@@ -51,7 +51,7 @@ class LogEntry:
     def parseMessage(self):
         # Split the record fields on spaces
         message = self.values['message'].split()
-        self.values['client'] = message[2]
+        self.values['client_ip'] = message[2]
         self.values['requested_name'] = message[3]
         self.values['type'] = message[4]
         #print(self.values['id'], self.values['client'], self.values['logtype'])
@@ -76,7 +76,7 @@ class LogEntry:
         valueString = ', '.join([
                                 self.values['client'], 
                                 self.values['name'], 
-                                self.values['date'], 
+                                self.values['timestamp'], 
                                 self.values['dnsserver'], 
                                 self.values['type'],
                                 ])

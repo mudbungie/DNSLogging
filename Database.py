@@ -1,10 +1,11 @@
 # Definition for the database itself
 
 # DB adapter
-import psycopg2
+#import psycopg2
+import sqlalchemy as sqla
 # Objects that handle the internal logic of each request
 from LogEntry import LogEntry
-# Config
+# Configuration stored in a gitignored file
 from Config import config
 
 class Database:
@@ -18,67 +19,58 @@ class Database:
 
     def connect(self):
         # Construct a string out of all of this data
-        connectionString = ' '.join([   'dbname=' + self.dbname, 
-                                        'user=' + self.user,
-                                        'password=' + self.password, 
-                                        'host=' + self.host,
+        connectionString = ''.join([    'postgresql+psycopg2://',
+                                        self.user, ':',
+                                        self.password, '@',
+                                        self.host, '/',
+                                        self.dbname, 
                                         ])
-        self.connection = psycopg2.connect(connectionString)
+        self.connection = sqla.create_engine(connectionString)
+        self.metadata = sqla.MetaData(self.connection)
 
-    def getRecordsFromTable(self, table, count=1000):
-        cursor = self.connection.cursor()
-        queryString = 'SELECT * FROM ' + table + ' limit ' + str(count)
-        cursor.execute(queryString)
-        records = cursor.fetchmany(count)
-        cursor.close()
+    def getRecordsFromTable(self, tableName, count=100):
+        # Returns an object that already has the schema mapped
+        # Initialize table object
+        table = sqla.Table(tableName, self.metadata, autoload=True)
+        # Construct the relevant query
+        select = sqla.select([table]).limit(count)
+        # Run it
+        records = self.connection.execute(select)
+
         return records
 
-    def getSyslogRecords(self, count=1000):
-        #cursor = self.connection.cursor()
-        #queryString = 'SELECT * FROM systemevents limit ' + str(count)
-        #cursor.execute(queryString)
-        #records = cursor.fetchmany(count)
+    def getSyslogRecords(self, count=100):
         records = self.getRecordsFromTable('systemevents')
         # Replace the list items with more useful versions of themselves
         for record in records:
             # The item initialization handles all the things that we need to do
             record = LogEntry(record, self)
-        #cursor.close()
 
-    def deleteLogById(self, logid):
-        cursor = self.connection.cursor()
-        queryString = 'DELETE FROM systemevents WHERE id=' + str(logid)
-        cursor.execute(queryString)
-        #print(cursor.statusmessage)
-        self.connection.commit()
-        cursor.close()
+    def deleteLogById(self, logId):
+        table = sqla.Table('systemevents', self.metadata, autoload=True)
+        delete = table.delete(table.c.id == logId)
+        self.connection.execute(delete)
 
-    def insertIntoTable(self, values, table):
-        # Takes a dict of values, matches keys to column name, returns a string
-        #FIXME This should be dynamic to the column names
-        #print('inserting')
-        cursor = self.connection.cursor()
-        insert = cursor.mogrify('INSERT INTO ' + table + '(client, requested_name, ' + 
-                        'timestamp, server, type) VALUES (%s, %s, %s, %s, %s)',
-                                (values['client'],
-                                values['requested_name'],
-                                values['date'],
-                                values['dnsserver'],
-                                values['type'],)
-                        )
-        cursor.execute(insert)
-        self.connection.commit()
-        cursor.close()
+    def insertIntoTable(self, data, tableName):
+        # Gets a dict of values, inserts them into like-named fields in the DB
+        table = sqla.Table(tableName, self.metadata, autoload=True)
 
-    def insertDNSLog(self, insert):
-        cursor = self.connection.cursor()
-        cursor.execute
+        # Go through all the fields in the table, see which of them apply
+        values = {}
+        for column in table.columns:
+            # That attribute is fully qualified, which isn't what I want
+            justTheName = str(column).split('.')[1]
+            #print(justTheName)
+            try:
+                values[justTheName] = data[justTheName]
+            except KeyError:
+                pass
 
-    def close(self):
-        self.connection.close()
+        # This is the SQL that will be executed
+        insert = table.insert().values(**values)
+        # Do it
+        self.connection.execute(insert)
 
 if __name__ == '__main__':
     a = Database(config['databases']['syslog'])
-    a.connect()
     a.getSyslogRecords()
-    a.close()
