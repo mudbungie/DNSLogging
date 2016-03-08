@@ -4,9 +4,7 @@
 #import psycopg2
 import sqlalchemy as sqla
 # Objects that handle the internal logic of each request
-from LogEntry import LogEntry
-# Configuration stored in a gitignored file
-from Config import config
+from LogEntry import FileLogEntry
 
 class Database:
     def __init__(self, databaseConfig):
@@ -60,17 +58,24 @@ class Database:
         for column in table.columns:
             # That attribute is fully qualified, which isn't what I want
             justTheName = str(column).split('.')[1]
-            #print(justTheName)
+            print(justTheName)
+            #print(data[justTheName], len(values))
             try:
-                values[justTheName] = data[justTheName]
+                values[justTheName.lower()] = data[justTheName.lower()]
+                print("MATCH!")
             except KeyError:
                 pass
+        if len(values) == 0:
+            print('nothing matched, something\'s wrong.')
+            raise Exception('nope')
 
         # This is the SQL that will be executed
         insert = table.insert().values(**values)
         # Do it
         self.connection.execute(insert)
 
-if __name__ == '__main__':
-    a = Database(config['databases']['syslog'])
-    a.getSyslogRecords()
+    def insertLog(self, data):
+        # Just a simple helper mask, so log objects don't need to know
+        # table structure.
+        self.insertIntoTable(data, 'dnslog')
+        

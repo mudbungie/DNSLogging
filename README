@@ -17,3 +17,5 @@ Requires packages:
     easysnmp
         Requires libsnmp-dev equivalent
         
+    # Packages that are required, but which virtualenv usually handles
+    configobj
