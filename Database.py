@@ -58,11 +58,11 @@ class Database:
         for column in table.columns:
             # That attribute is fully qualified, which isn't what I want
             justTheName = str(column).split('.')[1]
-            print(justTheName)
+            #print(justTheName)
             #print(data[justTheName], len(values))
             try:
                 values[justTheName.lower()] = data[justTheName.lower()]
-                print("MATCH!")
+                #print("MATCH!")
             except KeyError:
                 pass
         if len(values) == 0:

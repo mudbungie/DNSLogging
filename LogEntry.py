@@ -37,8 +37,8 @@ class FileLogEntry:
         self.values['type'] = self.record[9]
 
         # diagnostic
-        for key, value in self.values.items():
-            print(key + ' ' + str(value))
+        #for key, value in self.values.items():
+        #    print(key + ' ' + str(value))
         return True
     def isGoodLog(self):
         # Presently, we're just going for DNS records
@@ -68,7 +68,7 @@ class DBLogEntry:
         # The record comes back as a list, so make dict meaningful values
         self.values = {}
         self.values['id'] = record[0]
-        print(self.values['id'])
+        #print(self.values['id'])
         self.values['logtype'] = record[20]
         
         # Make sure that it's from a DNS server
