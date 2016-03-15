@@ -9,8 +9,9 @@ from Config import config
 from time import sleep
 
 if __name__ == '__main__':
-    db = Database(config['databases']['syslog'])
-    dnslogfile = LogFile(config['inputs']['logFile'], db)
+    dnslogdb = Database(config['databases']['syslog'])
+    radiusdb = Database(config['databases']['radius'])
+    dnslogfile = LogFile(config['inputs']['logFile'], dnslogdb, radiusdb)
     while True:
         dnslogfile.digestFile()
         sleep(1)

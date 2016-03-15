@@ -14,14 +14,20 @@ import psutil
 from LogEntry import FileLogEntry, NotADNSRecord
 
 class LogFile:
-    def __init__(self, fileName, database):
+    def __init__(self, fileName, database, radiusdb):
         # The file it eats from, and the DB that it, umm, evacuates to
         self.logFileName = fileName
         self.database = database
+        self.radiusdb = radiusdb
     def moveToWorkingFile(self):
         # Append .working to the filename
         self.workingFileName = self.logFileName + '.working'
-        os.rename(self.logFileName, self.workingFileName)
+        try:
+            os.rename(self.logFileName, self.workingFileName)
+        except FileNotFoundError:
+            # Usually happens if the process is invoked without provileges
+            # If it does, the .working should exist.
+            pass
         # Rsyslogd writes to file by inode, and doesn't notice when you move 
         # it, so you have to send a sighup in order to trigger it to start 
         # writing a new file.
@@ -34,6 +40,8 @@ class LogFile:
             for line in workingFile:
                 try:
                     log = FileLogEntry(line)
+                    log.getMac(self.database)
+                    log.getCustNum(self.radiusdb)
                     log.commit(self.database)
                 except NotADNSRecord:
                     # In case of any untoward data

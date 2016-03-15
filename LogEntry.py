@@ -32,7 +32,7 @@ class FileLogEntry:
         self.values['querytime'] = dateparser.parse(str(self.record[0:3]))
         self.values['reporttime'] = datetime.now()
         self.values['answeringserver'] = self.record[3]
-        self.values['client'] = self.record[7]
+        self.values['client_ip'] = self.record[7]
         self.values['request'] = self.record[8]
         self.values['type'] = self.record[9]
 
@@ -49,8 +49,17 @@ class FileLogEntry:
             return False
     def commit(self, database):
         # Commit the parsed record to the database
-        database.insertLog(self.values)
+        database.insertDNSRecord(self.values)
 
+    def getMac(self, database):
+        # Query the ARP records for the MAC address
+        mac = database.getMac(self.values['client_ip'], self.values['querytime'])
+        self.values['client_mac'] = mac
+
+    def getCustNum(self, database):
+        # Note that database in this case is a MariaDB backend connecting to a
+        # remote host, and is a different database than we commit to.
+        self.values['custnum'] = database.getCustNum(self.values['mac'])
 
 # For DB records, which have been inserted into a database already
 # Isn't working on the production machine, because OpenBSD is funky, but
@@ -105,14 +114,6 @@ class DBLogEntry:
         self.values['type'] = message[4]
         #print(self.values['id'], self.values['client'], self.values['logtype'])
 
-    #def getHostValues(self):
-    #    # Initialize a Host object, pull relevant values out of it
-    #    host = Host(self.values['client'])
-    #    self.values['MAC'] = host.mac
-    #    self.values['userid'] = host.userid
-    #    print(self.values['MAC'])
-    #    print(self.values['userid'])
-
     def purgeLog(self):
         # Remove log from the syslog ingress table
         #print('Deleting log entry with id ' + str(self.values['id']))
@@ -121,9 +122,9 @@ class DBLogEntry:
     def constructInsert(self):
         # Constructs an INSERT statement based on the attributes of the object
         # returns string.
-        structure = 'INSERT INTO dnslog (client, requested_name, timestamp, server, type) VALUES ('
+        structure = 'INSERT INTO dnslog (client_ip, requested_name, timestamp, server, type) VALUES ('
         valueString = ', '.join([
-                                self.values['client'], 
+                                self.values['client_ip'], 
                                 self.values['name'], 
                                 self.values['timestamp'], 
                                 self.values['dnsserver'], 
@@ -131,8 +132,11 @@ class DBLogEntry:
                                 ])
         insert = structure + valueString
         return insert
+    
     def saveRecord(self):
         # Writes the query back to the database all cleaned up, and in a new format
         #print('recording')
         self.database.insertIntoTable(self.values, 'dnslog')
-        
+
+#    def saveRecord(self):
+#        self.database.insertDNSRecord(self.values)
