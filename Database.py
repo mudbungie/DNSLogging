@@ -10,7 +10,7 @@ class Database:
     def __init__(self, databaseConfig):
         # Open the database with the info in the config
         self.dbname = databaseConfig['dbname']
-        self.dbtype = datebaseConfig['dbtype']
+        self.dbtype = databaseConfig['dbtype']
         self.host = databaseConfig['host']
         self.user = databaseConfig['user']
         self.password = databaseConfig['password']
@@ -21,7 +21,7 @@ class Database:
         if self.dbtype == 'postgresql':
             prefix = 'postgresql+psycopg2://'
         elif self.dbtype == 'mysql':
-            prefix = 'mysql://'
+            prefix = 'mysql+pymysql://'
         connectionString = ''.join([    prefix,
                                         self.user, ':',
                                         self.password, '@',
