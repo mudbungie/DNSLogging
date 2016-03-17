@@ -5,6 +5,7 @@
 import sqlalchemy as sqla
 # Objects that handle the internal logic of each request
 from LogEntry import FileLogEntry
+import datetime
 
 class Database:
     def __init__(self, databaseConfig):
@@ -111,25 +112,76 @@ class Database:
         try:
             return matchingRecords.fetchone().mac
         except:
-            return False
+            return None
 
     def getCustNum(self, mac):
+        #FIXME This is deprecated; would work fine, but the IO latency on that
+        # database is extreme, so user getRadiusData instead
+
         # When connected to the RADIUS database, returns a freeside custnum
         tableName = 'username_mac'
-        radRecords = self.metadata.tables[tableName]
+        #radRecords = self.metadata.tables[tableName]
+        radRecords = sqla.Table(tableName, self.metadata, autoload=True, 
+            autoload_with=self.connection)
 
         # Have to start by formatting the MAC address, because freeside records it differently
         fmac = mac.replace(':', '-').upper()
         # Get the matching record from RADIUS
-        radQuery = radRecords.select().where(radRecords.c.name_exp_2 == fmac)
+        radQuery = radRecords.select().where(radRecords.c.Name_exp_2 == fmac)
         radRecord = self.connection.execute(radQuery)
 
         # Make sure that the data isn't funky
         assert radRecord.rowcount <= 1
 
+        try:
+            # If there are no hits, this will throw an error
+            radUsername = radRecord.fetchone().username
+            username = ''.join(c for c in radUsername if c.isdigit())
+        except AttributeError:
+            # But that's fine, some authenticated devices don't have usernames
+            username = None
         # The are serial numbers that sometimes have extra alpha characters.
-        # We don't want those alpha characters.
-        radUsername = radRecord.fetchone().username
+        # We don't want those alpha characters, because they don't associate
         # Scrub everything but digits
-        username = ''.join(c for c in radUsername if c.isdigit())
         return username
+
+    def getRadiusData(self):
+        # Pulls RADIUS associations of MACs to clientids
+        radTable = sqla.Table('username_mac', self.metadata, autoload=True,
+            autoload_with=self.connection)
+        radQuery = radTable.select()
+        radRecords = self.connection.execute(radQuery)
+
+        radData = {}
+        for radRecord in radRecords:
+            # Make sure that it's actually a custid, this table is dirty
+                if radRecord.username[0].isdigit():
+                    # Reformat the MAC address 
+                    # One day I'll find out why the RADIUS column names are so weird
+                    usableMac = radRecord.Name_exp_2.replace('-', ':').lower()
+                    # Scrub alpha characters from the username
+                    custid = ''.join(c for c in radRecord.username if c.isdigit())
+                    radData[usableMac] = custid
+        return radData
+
+    def initTable(self, tableName):
+        # Didn't realize that I'd end up doing this so many times
+        #FIXME Go through and make everything use this function instead
+        table = self.metadata.tables[tableName]
+        return table
+
+    def findFreesideCustomers(self, name):
+        custTable = self.initTable('cust_main')
+        
+        # We might search by the billing name or the company name
+        billingOrCompany = sqla.or_(custTable.c.payname == name, 
+            custTable.c.company == name)
+        custsByName = custTable.select().where(nameOrCompany)
+        custs = self.connection.execute(custsByName)
+        return custs
+
+    def getRecordsByCustNum(self, custNum):
+        dnslogTable = self.initTable('dnslog')
+        # Get all the records from that customer
+        dnslogs = dnslogTable.select().where(dnslogTable.c.custnum == custNum)
+        

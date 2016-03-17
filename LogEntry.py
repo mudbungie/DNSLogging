@@ -56,10 +56,13 @@ class FileLogEntry:
         mac = database.getMac(self.values['client_ip'], self.values['querytime'])
         self.values['client_mac'] = mac
 
-    def getCustNum(self, database):
-        # Note that database in this case is a MariaDB backend connecting to a
-        # remote host, and is a different database than we commit to.
-        self.values['custnum'] = database.getCustNum(self.values['mac'])
+    def getCustNum(self, radiusDict):
+        # If possible, get the custid from the RADIUS data
+        try:
+            self.values['custnum'] = radiusDict[self.values['client_mac']]
+        except KeyError:
+            # If it's not there, it's not there
+            self.values['custnum'] = None
 
 # For DB records, which have been inserted into a database already
 # Isn't working on the production machine, because OpenBSD is funky, but

@@ -32,23 +32,34 @@ class LogFile:
         # it, so you have to send a sighup in order to trigger it to start 
         # writing a new file.
         for process in psutil.process_iter():
-            if process.name() == 'rsyslogd':
-                process.send_signal(psutil.signal.SIGHUP)
+            try:
+                if process.name() == 'rsyslogd':
+                    process.send_signal(psutil.signal.SIGHUP)
+            except psutil.NoSuchProcess:
+                pass
     def parseWorkingFile(self):
         # Break the file into lines, make LogEntry objects out of it
         with open(self.workingFileName, 'r') as workingFile:
             for line in workingFile:
                 try:
+                    # Read the log file
                     log = FileLogEntry(line)
+                    # Check ARP to associate the IP with MAC
                     log.getMac(self.database)
-                    log.getCustNum(self.radiusdb)
+                    # Check RADIUS to associate MAC with custid
+                    log.getCustNum(self.radiusData)
+                    # Insert record
                     log.commit(self.database)
                 except NotADNSRecord:
                     # In case of any untoward data
                     pass
     def purgeWorkingFile(self):
-            os.remove(self.workingFileName)
+        os.remove(self.workingFileName)
+    def updateRadiusData(self):
+        self.radiusData = self.radiusdb.getRadiusData()
     def digestFile(self):
+        # Update the RADIUS data correlating macs to custids
+        self.updateRadiusData()
         # Move the file to a working location
         self.moveToWorkingFile()
         # Read everything into LogEntries
