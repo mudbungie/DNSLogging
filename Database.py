@@ -170,18 +170,39 @@ class Database:
         table = self.metadata.tables[tableName]
         return table
 
-    def findFreesideCustomers(self, name):
+    def getCustByName(self, name):
+        print(name)
         custTable = self.initTable('cust_main')
         
         # We might search by the billing name or the company name
-        billingOrCompany = sqla.or_(custTable.c.payname == name, 
-            custTable.c.company == name)
-        custsByName = custTable.select().where(nameOrCompany)
+        billingOrCompany = sqla.or_(custTable.c.payname.like(name), 
+            custTable.c.company.like(name))
+        # We also might search by first and last name, which is two fields
+        try:
+            names = name.split()
+            firstName = names[0]
+            lastName = names[-1]
+        except KeyError:
+            # Means that a request was given with no space;
+            lastName = names[0]
+        firstAndLast = sqla.and_(custTable.c.first == firstName, custTable.c.last == lastName)
+        # Combine them
+        nameOrBillingOrCompany = sqla.or_(billingOrCompany, firstAndLast)
+        custsByName = custTable.select().where(nameOrBillingOrCompany)
         custs = self.connection.execute(custsByName)
         return custs
 
-    def getRecordsByCustNum(self, custNum):
+    def getRecordsByIP(self, ip):
         dnslogTable = self.initTable('dnslog')
-        # Get all the records from that customer
-        dnslogs = dnslogTable.select().where(dnslogTable.c.custnum == custNum)
-        
+        query = dnslogTable.select().where(dnslogTable.c.client_ip == ip).\
+            order_by(dnslogTable.c.querytime.desc())
+        records = self.connection.execute(query)
+        return records
+
+    def getRecordsByCustnum(self, custnum):
+        dnslogTable = self.initTable('dnslog')
+        query = dnslogTable.select().where(dnslogTable.c.custnum == custnum).\
+            order_by(dnslogTable.c.querytime.desc())
+        records = self.connection.execute(query)
+        return records
+
