@@ -5,7 +5,7 @@
 # Write the data back into the database in a more usable format.
 
 #from Host import Host
-import dateparser
+#import dateparser
 from datetime import datetime
 
 class NotADNSRecord(Exception):
@@ -29,12 +29,13 @@ class FileLogEntry:
     def parse(self):
         # Cut the record into pieces, commit them to a dictionary
         self.values = {}
-        self.values['querytime'] = dateparser.parse(str(self.record[0:3]))
+        #self.values['querytime'] = self.parseDate(self.record[0:3])
         self.values['reporttime'] = datetime.now()
         self.values['answeringserver'] = self.record[3]
         self.values['client_ip'] = self.record[7]
         self.values['request'] = self.record[8]
         self.values['type'] = self.record[9]
+        self.parseDate()
 
         # diagnostic
         #for key, value in self.values.items():
@@ -50,6 +51,33 @@ class FileLogEntry:
     def commit(self, database):
         # Commit the parsed record to the database
         database.insertDNSRecord(self.values)
+
+    def parseDate(self):
+        # The dateparser function was waaay too slow, so I'm writing something special-built.
+        shortMonths = {
+            'Jan':1,
+            'Feb':2,
+            'Mar':3,
+            'Apr':4,
+            'May':5,
+            'Jun':6,
+            'Jul':7,
+            'Aug':8,
+            'Sep':9,
+            'Oct':10,
+            'Nov':11,
+            'Dec':12
+            }
+        month = shortMonths[self.record[0]]
+        day = int(self.record[1])
+        timeSplit = self.record[2].split(':')
+        hour = int(timeSplit[0])
+        minute = int(timeSplit[1])
+        second = int(timeSplit[2])
+        year = datetime.now().year
+        date = datetime(year=year, month=month, day=day, hour=hour,
+            minute=minute, second=second)
+        self.values['querytime'] = date
 
     def getMac(self, database):
         # Query the ARP records for the MAC address

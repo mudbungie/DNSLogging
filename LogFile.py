@@ -56,7 +56,7 @@ class LogFile:
     def purgeWorkingFile(self):
         os.remove(self.workingFileName)
     def updateRadiusData(self):
-        self.radiusData = self.radiusdb.getRadiusData()
+        self.radiusData = self.radiusdb.getMacCustIdMapping()
     def digestFile(self):
         # Update the RADIUS data correlating macs to custids
         self.updateRadiusData()

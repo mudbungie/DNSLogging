@@ -1,7 +1,6 @@
 # Definition for the database itself
 
 # DB adapter
-#import psycopg2
 import sqlalchemy as sqla
 # Objects that handle the internal logic of each request
 from LogEntry import FileLogEntry
@@ -9,6 +8,11 @@ import datetime
 
 class Database:
     def __init__(self, databaseConfig):
+        self.initDB(databaseConfig)
+        # Defined in child classes, pertains to tables they use
+        self.initTables()
+
+    def initDB(self, databaseConfig):
         # Open the database with the info in the config
         self.dbname = databaseConfig['dbname']
         self.dbtype = databaseConfig['dbtype']
@@ -16,7 +20,7 @@ class Database:
         self.user = databaseConfig['user']
         self.password = databaseConfig['password']
         self.connect()
-
+    
     def connect(self):
         # Construct a string out of all of this data
         if self.dbtype == 'postgresql':
@@ -33,32 +37,24 @@ class Database:
         self.metadata = sqla.MetaData(self.connection)
         self.metadata.reflect()
 
-    def getRecordsFromTable(self, tableName, count=100):
-        # Returns an object that already has the schema mapped
-        # Initialize table object
-        table = sqla.Table(tableName, self.metadata, autoload=True)
-        # Construct the relevant query
-        select = sqla.select([table]).limit(count)
-        # Run it
-        records = self.connection.execute(select)
+    def initTable(self, tableName):
+        # Didn't realize that I'd end up doing this so many times
+        # This method is more temperamental to permissions
+        #table = self.metadata.tables[tableName]
+        # so I'm using this instead.
+        table = sqla.Table(tableName, self.metadata, autoload=True, 
+            autoload_with=self.connection)
+        return table
 
-        return records
+    def initTables(self, tableNames):
+        # Take a list of tables, assign an attribute which is a dict of the
+        # initialized tables, so that they don't need to be reopened later.
+        self.tables = {}
+        for tableName in tableNames:
+            self.tables[tableName] = self.initTable(tableName)
 
-    def getSyslogRecords(self, count=100):
-        records = self.getRecordsFromTable('systemevents')
-        # Replace the list items with more useful versions of themselves
-        for record in records:
-            # The item initialization handles all the things that we need to do
-            record = LogEntry(record, self)
-
-    def deleteLogById(self, logId):
-        table = sqla.Table('systemevents', self.metadata, autoload=True)
-        delete = table.delete(table.c.id == logId)
-        self.connection.execute(delete)
-
-    def insertIntoTable(self, data, tableName):
+    def insertIntoTable(self, data, table):
         # Gets a dict of values, inserts them into like-named fields in the DB
-        table = sqla.Table(tableName, self.metadata, autoload=True)
 
         # Go through all the fields in the table, see which of them apply
         values = {}
@@ -72,47 +68,17 @@ class Database:
                 #print("MATCH!")
             except KeyError:
                 pass
+
         if len(values) == 0:
+            # Make sure you're inserting something at all
             print('nothing matched, something\'s wrong.')
-            raise Exception('nope')
+            raise Exception('empty insert, probable table-value mismatch')
 
         # This is the SQL that will be executed
         insert = table.insert().values(**values)
         # Do it
         pkey = self.connection.execute(insert).inserted_primary_key
         return pkey 
-
-    def insertDNSRecord(self, data):
-        # Just a simple helper mask, so log objects don't need to know
-        # table structure.
-        self.insertIntoTable(data, 'dnslog')
-       
-    def getMac(self, ip, time):
-        # Find what MAC address owned a certain IP at a certain time
-
-        # Connect to the ARP records collected from our routers
-        tableName = 'arp'
-        arpRecords = self.metadata.tables[tableName]
-
-        # Records about that IP address that are at the correct time
-        unexpired = sqla.or_(arpRecords.c.expired == None, arpRecords.c.expired > time)
-        correctTime = sqla.and_(arpRecords.c.observed < time, unexpired)
-        matchingArpQuery = sqla.and_(arpRecords.c.ip == ip, correctTime)
-
-        matchingRecordSelect = arpRecords.select().where(matchingArpQuery)
-
-        matchingRecords = self.connection.execute(matchingRecordSelect)
-        # There should only be one record, or something is wrong
-        #print(ip)
-        #print(time)
-        #print(matchingArpQuery)
-        #print(matchingRecords.rowcount)
-        assert matchingRecords.rowcount <= 1
-        # Answer with the MAC
-        try:
-            return matchingRecords.fetchone().mac
-        except:
-            return None
 
     def getCustNum(self, mac):
         #FIXME This is deprecated; would work fine, but the IO latency on that
@@ -145,31 +111,6 @@ class Database:
         # Scrub everything but digits
         return username
 
-    def getRadiusData(self):
-        # Pulls RADIUS associations of MACs to clientids
-        radTable = sqla.Table('username_mac', self.metadata, autoload=True,
-            autoload_with=self.connection)
-        radQuery = radTable.select()
-        radRecords = self.connection.execute(radQuery)
-
-        radData = {}
-        for radRecord in radRecords:
-            # Make sure that it's actually a custid, this table is dirty
-                if radRecord.username[0].isdigit():
-                    # Reformat the MAC address 
-                    # One day I'll find out why the RADIUS column names are so weird
-                    usableMac = radRecord.Name_exp_2.replace('-', ':').lower()
-                    # Scrub alpha characters from the username
-                    custid = ''.join(c for c in radRecord.username if c.isdigit())
-                    radData[usableMac] = custid
-        return radData
-
-    def initTable(self, tableName):
-        # Didn't realize that I'd end up doing this so many times
-        #FIXME Go through and make everything use this function instead
-        table = self.metadata.tables[tableName]
-        return table
-
     def getCustByName(self, name):
         print(name)
         custTable = self.initTable('cust_main')
@@ -191,18 +132,4 @@ class Database:
         custsByName = custTable.select().where(nameOrBillingOrCompany)
         custs = self.connection.execute(custsByName)
         return custs
-
-    def getRecordsByIP(self, ip):
-        dnslogTable = self.initTable('dnslog')
-        query = dnslogTable.select().where(dnslogTable.c.client_ip == ip).\
-            order_by(dnslogTable.c.querytime.desc())
-        records = self.connection.execute(query)
-        return records
-
-    def getRecordsByCustnum(self, custnum):
-        dnslogTable = self.initTable('dnslog')
-        query = dnslogTable.select().where(dnslogTable.c.custnum == custnum).\
-            order_by(dnslogTable.c.querytime.desc())
-        records = self.connection.execute(query)
-        return records
 
