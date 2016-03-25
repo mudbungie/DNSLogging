@@ -1,6 +1,7 @@
 # Database subclass for interacting with Freeside
 
 from Database import Database
+import sqlalchemy as sqla
 
 class FreesideDB(Database):
     def __init__(self, databaseConfig):
@@ -22,7 +23,7 @@ class FreesideDB(Database):
         except KeyError:
             # No spaces
             lastName = names[0]
-        firstAndLast = sqla.and_(table.c.first == FirstName, 
+        firstAndLast = sqla.and_(table.c.first == firstName, 
             table.c.last == lastName)
 
         nameOrBillingOrCompany = sqla.or_(billingOrCompany, firstAndLast)

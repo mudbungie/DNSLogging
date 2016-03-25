@@ -5,11 +5,17 @@
     <body>
     <h2 style="text-align:center">DNS Record Search</h2>
     <hr>
-    <h3 style="text-align:center">Submit a customer name or IP address</h3>
+    <h3 style="text-align:center">Submit a customer name or IP address with optional time range</h3>
     <div align="center">
-        <form action="query" method="post">
-        <input type="text" name="query">
-        <input style="text-align:center" type="submit" value="Search">
+        <form action="/query" method="post">
+            <input type="text" name="searchString">
+            <input style="text-align:center" type="submit" value="Search">
+            <br/>
+            <p>If you're using a browser that doesn't support date and time inputs natively, please use ISO8601 style: YYYY-MM-DD and 24-hour HH:MM</p>
+            <input name="dstart" type="date"/><label>Date Start</label>
+            <input name="tstart" type="time"/><label>Time Start</label><br/>
+            <input name="dstop" type="date"><label>Date Stop </label>
+            <input name="tstop" type="time"/><label>Time Stop </label><br/>
         </form>
     </div>
     </body>

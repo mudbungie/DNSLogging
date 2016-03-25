@@ -34,47 +34,65 @@ class DNSLogDB(Database):
         except:
             mac = None
         return mac
-    '''
-    def getMac(self, ip, time):
-        # Find what MAC address owned a certain IP at a certain time
-
-        # Connect to the ARP records collected from our routers
-        arpRecords = self.tables['arp']
-
-        # Records about that IP address that are at the correct time
-        unexpired = sqla.or_(arpRecords.c.expired == None, arpRecords.c.expired > time)
-        correctTime = sqla.and_(arpRecords.c.observed < time, unexpired)
-        matchingArpQuery = sqla.and_(arpRecords.c.ip == ip, correctTime)
-
-        matchingRecordSelect = arpRecords.select().where(matchingArpQuery)
-
-        matchingRecords = self.connection.execute(matchingRecordSelect)
-        # There should only be one record, or something is wrong
-        assert matchingRecords.rowcount <= 1
-        # Answer with the MAC
-        try:
-            return matchingRecords.fetchone().mac
-        except:
-            return None
-    '''
+    
     def getCustRecords(self, table, whereclause):
         # Get records according to some where clause
         query = table.select().where(whereclause).order_by(table.c.querytime.desc())
         records = self.connection.execute(query)
         return records
-
-    def getRecordsByIP(self, ip):
+    
+    #FIXME This code written under deadline, not DRY. Need to debloat
+    def getRecordsByIP(self, ip, start=None, stop=None):
         table = self.tables['dnslog']
-        where = table.select().where(table.c.client_ip == ip).order_by(table.c.querytime.desc())
-        return self.connection.execute(where)
+        # If there is a chronological restriction...
+        if start and stop:
+            print('chronological filter matched')
+            query = table.select().where(sqla.and_(table.c.client_ip == ip, 
+                table.c.querytime > start,
+                table.c.querytime < stop)).order_by(table.c.querytime.desc())
+        elif start:
+            # Make sure that it's younger than the specified timestamp
+            query = table.select().where(sqla.and_(table.c.client_ip == ip,
+                table.c.querytime > start)).order_by(table.c.querytime.desc())
+        elif stop:
+            # Make sure that it's older than the specified timestamp
+            query = table.select().where(sqla.and_(table.c.client_ip == ip,
+                table.c.querytime < stop)).order_by(table.c.querytime.desc())
+        else:
+            # If there's no chronology, just return everything
+            query = table.select().where(table.c.client_ip == ip).\
+                order_by(table.c.querytime.desc())
+        print(query)
+        return self.connection.execute(query)
 
     def getRecordsByCustnum(self, custnum):
         table = self.tables['dnslog']
         where = table.select().where(table.c.custnum == custnum).order_by(table.c.querytime.desc())
         return self.connection.execute(where)
 
-    def getRecordsByCustnums(self, custnums):
+    def getRecordsByCustnums(self, custnums, start=None, stop=None):
         # For when it might match multiple
         table = self.tables['dnslog']
-        where = table.select().where(table.c.custnum in custnums).order_by(table.c.querytime.desc())
-        return self.connection.execute(where)
+        # All name matches are returned, so we iterate
+        for custnum in custnums:
+            # If there is a chronological restriction...
+            if start and stop:
+                print('chronological filter matched')
+                query = table.select().where(sqla.and_(table.c.custnum == custnum, 
+                    table.c.querytime > start,
+                    table.c.querytime < stop)).order_by(table.c.querytime.desc())
+            elif start:
+                # Make sure that it's younger than the specified timestamp
+                query = table.select().where(sqla.and_(table.c.custnum == custnum,
+                    table.c.querytime > start)).order_by(table.c.querytime.desc())
+            elif stop:
+                # Make sure that it's older than the specified timestamp
+                query = table.select().where(sqla.and_(table.c.custnum == custnum,
+                    table.c.querytime < stop)).order_by(table.c.querytime.desc())
+            else:
+                # If there's no chronology, just return everything
+                query = table.select().where(table.c.custnum == custnum).\
+                    order_by(table.c.querytime.desc())
+            print(query)
+            return self.connection.execute(query)
+                # Make sure that it's younger than the specified timestamp

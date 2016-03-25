@@ -1,6 +1,9 @@
 #!/usr/local/bin/python3
 # This is a command-line executable that will return all DNS records made by a
 # customer when provided his/her name.  
+# It's also used by the web system for the same purposes
+#FIXME This got bloated, and I'm passing variables around like an idiot. Make 
+# a class to handle all the web stuff.
 
 from Config import config
 from DNSLogDB import DNSLogDB
@@ -25,13 +28,13 @@ def matchIP(string):
     except ipaddress.AddressValueError:
         return False
 
-def searchRecordsByIP(ip):
+def searchRecordsByIP(ip, start, stop):
     dnslogdb = DNSLogDB(config['databases']['dnslog'])
-    records = dnslogdb.getRecordsByIP(ip)
-    htmlFormatRecords(records)
+    records = dnslogdb.getRecordsByIP(ip, start, stop)
+    #htmlFormatRecords(records)
     return records
 
-def searchRecordsByName(name):
+def searchRecordsByName(name, start, stop):
     dnslogdb = DNSLogDB(config['databases']['dnslog'])
     freesidedb = FreesideDB(config['databases']['freeside'])
     # Important to note that this can return more than one host.
@@ -40,35 +43,43 @@ def searchRecordsByName(name):
     custnums = []
     for cust in custs:
         custnums.append(cust.custnum)
-    records = dnslogdb.getRecordsByCustnums(custnums)
+    records = dnslogdb.getRecordsByCustnums(custnums, start, stop)
     return records 
 
-def searchLogs(string):
+def searchLogs(string, start, stop):
     if matchIP(string):
         # Then it's an IP address, so do a search for matching IPs.
-        records = searchRecordsByIP(string)
+        records = searchRecordsByIP(string, start, stop)
     else:
         # Otherwise, check if it matches any names.
-        records = searchRecordsByName(string)
+        records = searchRecordsByName(string, start, stop)
     return records
 
+def htmlFormatRecord(record):
+    html = '<tr>'
+    html += '<td>' + str(record.querytime) + '</td>'
+    html += '<td>' + str(record.request) + '</td>'
+    #print(html)
+    return html
+
 def htmlFormatRecords(records):
-    html = '<table>\n'
-    html += '<tr><td>Date</td><td>Request</td></tr>\n'
+    print('Formatter invoked')
+    html = '<head><style>table td{border: 1px solid black;}</style></head>'
+    html += '<table>'
+    html += '<tr><td>Date</td><td>Request</td></tr>'
+    count = 0
     for record in records:
-        html += '<tr>'
-        html += '<td>' + str(record.querytime) + '</td>'
-        html += '<td>' + record.request + '</td>'
-        html += '\n'
+        html += htmlFormatRecord(record)
+        count += 1
+    print('Iterated ' + str(count) + ' times')
     html += '</table>'
     return html
 
-def getWebTable(string):
+def getWebTable(string, start, stop):
     # Takes a request from a web input, gives back a formatted block of HTML
-    print('whatever')
-    print(string)
-    records = searchLogs(string)
-    print(len(records))
+    print('Searching for: ' + string)
+    records = searchLogs(string, start, stop)
+    print('Returned ' + str(records.rowcount) + ' records')
     return htmlFormatRecords(records)
 
 if __name__ == '__main__':

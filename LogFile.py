@@ -10,6 +10,8 @@
 
 import os
 import psutil
+# FIXME delete; just here for some diagnostics
+from datetime import datetime
 
 from LogEntry import FileLogEntry, NotADNSRecord
 
@@ -55,6 +57,9 @@ class LogFile:
                     pass
     def purgeWorkingFile(self):
         os.remove(self.workingFileName)
+        # In case you want to preserve the original logs for debugging
+        #rightnow = datetime.now().strftime('%s')
+        #os.rename(self.workingFileName, self.workingFileName + rightnow)
     def updateRadiusData(self):
         self.radiusData = self.radiusdb.getMacCustIdMapping()
     def digestFile(self):
