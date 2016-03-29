@@ -10,7 +10,7 @@ def isDate(string):
         return False
 def isTime(string):
     # Makin' sure.
-    timeMatch = re.compile(r'^[0-9]{2}:[0-9]{2}$')
+    timeMatch = re.compile(r'^[0-9]{2}(:[0-9]{2}){1,2}$')
     if re.match(timeMatch, string):
         return True
     else:

@@ -1,6 +1,27 @@
 <html>
     <head>
         <title>DNSLogs</title>
+        <!-- Well, here we go... --!>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+        <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+        <script>
+            $(function(){
+                $("#dstart, #dstop").datepicker();
+            });
+        </script>
+        <script>
+            function readTags(json){
+            // Read all the tags in the JSON into a big list
+            }
+            $()(function(){
+                $.ajax({
+                url:"userProfiles"
+                dataType:"json"
+                success:function(data)
+                })
+            })
+        </script>
     </head>
     <body>
     <h2 style="text-align:center">DNS Record Search</h2>
@@ -12,9 +33,9 @@
             <input style="text-align:center" type="submit" value="Search">
             <br/>
             <p>If you're using a browser that doesn't support date and time inputs natively, please use ISO8601 style: YYYY-MM-DD and 24-hour HH:MM</p>
-            <input name="dstart" type="date"/><label>Date Start</label>
+            <label>Date Start </label><input name="dstart" id="dstart"/>
             <input name="tstart" type="time"/><label>Time Start</label><br/>
-            <input name="dstop" type="date"><label>Date Stop </label>
+            <label>Date Stop </label><input name="dstop" id="dstop">
             <input name="tstop" type="time"/><label>Time Stop </label><br/>
         </form>
     </div>

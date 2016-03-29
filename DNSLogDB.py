@@ -26,6 +26,25 @@ class DNSLogDB(Database):
         for arpRecord in arpRecords:
             self.mac[arpRecord.ip] = arpRecord.mac
 
+    def getMacIps(self):
+        # Returns an inverted mapping of the previous function, for reversed
+        # lookups. Used in web interface. Unfortunately, nothing is unique, 
+        # so goodbye nice and efficient dicts, hello list of tuples.
+        arpRecords = self.tables['arp']
+        arpQuery = arpRecords.select().where(arpRecords.c.expired == None)
+        arpRecords = self.connection.execute(arpQuery)
+
+        # Make a dict indexed by MAC
+        macIps = {}
+        for arpRecord in arpRecords:
+            try:
+                # Append the IP to the existing MAC
+                macIps[arpRecord.mac].append(arpRecord.ip)
+            except KeyError:
+                # Unless it's new, in which case, initialize it.
+                macIps[arpRecord.mac] = [arpRecord.ip]
+        return macIps
+
     def getMac(self, ip, time):
         # Just look in the local dict. Since I'm shorthanding the table, 
         # there's no expiry check.

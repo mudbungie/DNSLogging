@@ -57,6 +57,7 @@ def searchLogs(string, start, stop):
 
 def htmlFormatRecord(record):
     html = '<tr>'
+    html += '<td>' + str(record.answeringserver) + '</td>'
     html += '<td>' + str(record.querytime) + '</td>'
     html += '<td>' + str(record.request) + '</td>'
     #print(html)
@@ -66,7 +67,7 @@ def htmlFormatRecords(records):
     print('Formatter invoked')
     html = '<head><style>table td{border: 1px solid black;}</style></head>'
     html += '<table>'
-    html += '<tr><td>Date</td><td>Request</td></tr>'
+    html += '<tr><td>DNSServer</td><td>Date</td><td>Request</td></tr>'
     count = 0
     for record in records:
         html += htmlFormatRecord(record)

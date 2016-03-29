@@ -5,6 +5,7 @@
 
 import bottle
 from CheckDNSRecords import getWebTable
+from WebInterface import getUserProfiles
 import TimeStamps
 logInterface = bottle.Bottle()
 
@@ -28,6 +29,11 @@ def answerQuery():
     stop = TimeStamps.convertDate(dstop, tstop)
     # Pass that and the actual query string to the database and formatter
     return getWebTable(query, start, stop)
+
+@logInterface.route('/userProfiles')
+def userProfiles():
+    # Return a big JSON blob for use in the autocomplete function
+    return getUserProfiles()
 
 @logInterface.route('/favicon.ico')
 def fuckyou():

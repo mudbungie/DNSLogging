@@ -31,3 +31,15 @@ class FreesideDB(Database):
         custs = self.connection.execute(custsByName)
         # Remember that this gives the recrods proxy object, not the numbers
         return custs
+
+    def getCustByCustnum(self, custnum):
+        table = self.tables['cust_main']
+        custQuery = table.select().where(table.c.custnum == custnum)
+        custs = self.connection.execute(custQuery)
+        return custs.fetchone()
+
+    def getAllCusts(self):
+        table = self.tables['cust_main']
+        custQuery = table.select()
+        custs = self.connection.execute(custQuery)
+        return custs
