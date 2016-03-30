@@ -15,14 +15,30 @@ def getCustJson():
     custRecords = fsdb.getAllCusts()
 
     # Then compile all of their JSON into a big string
+    # NOTE: This is done in a manner which seems backwards. It is so because 
+    # it is used for autocompletion in the browser, so the key needs to be
+    # the human-readable string.
+    
+    # This is for making a dictionary
+    '''
     customers = {}
     for custRecord in custRecords:
         cust = FSCustomer(custRecord)
-        customers[cust.custnum] = cust.names
+        for nametype, name in cust.names.items():
+            customers[name] = cust.custnum
+        #customers[cust.custnum] = cust.names
+    '''
+    # This is for making a list
+    customers = []
+    for custRecord in custRecords:
+        cust = FSCustomer(custRecord)
+        for nametype, name in cust.names.items():
+            if not name == None and not name in customers:
+                customers.append(name)
     jsonComp = json.dumps(customers)
     return jsonComp
 
-### The following classes are for a legacy implementation. I entend to reuse them.
+### The following classes are for a legacy implementation. I intend to reuse them.
 
 class UserProfile:
     # Class that gathers and compiles information regarding a single user 

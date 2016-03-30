@@ -6,21 +6,20 @@
         <script src="//code.jquery.com/jquery-1.11.1.js"></script>
         <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
         <script>
+            // Use jquery's datepicker ui.
             $(function(){
                 $("#dstart, #dstop").datepicker();
             });
         </script>
         <script>
-            function readTags(json){
-            // Read all the tags in the JSON into a big list
-            }
-            $()(function(){
-                $.ajax({
-                url:"userProfiles"
-                dataType:"json"
-                success:function(data)
+            // Autocompletion for the search field
+            $(document).ready(function(){
+                console.log("ready");
+                $.getJSON("custs.json", function(data){
+                    console.log(data)
+                    $("#searchString").autocomplete({source:data});
                 })
-            })
+            });
         </script>
     </head>
     <body>
@@ -29,7 +28,7 @@
     <h3 style="text-align:center">Submit a customer name or IP address with optional time range</h3>
     <div align="center">
         <form action="/query" method="post">
-            <input type="text" name="searchString">
+            <input type="text" name="searchString" id="searchString">
             <input style="text-align:center" type="submit" value="Search">
             <br/>
             <p>If you're using a browser that doesn't support date and time inputs natively, please use ISO8601 style: YYYY-MM-DD and 24-hour HH:MM</p>

@@ -15,7 +15,7 @@ class FSCustomer(Customer):
         self.custnum = fsRecord.custnum
         self.first = fsRecord.first
         self.last = fsRecord.last
-        self.fullname = self.first + self.last
+        self.fullname = self.first + ' ' + self.last
         self.payname = fsRecord.payname
         self.company = fsRecord.company
         self.names = {'name':self.fullname,
