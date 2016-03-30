@@ -5,8 +5,9 @@
 
 import bottle
 from CheckDNSRecords import getWebTable
-from WebInterface import getUserProfiles
+from WebInterface import getUserProfiles, getCustJson
 import TimeStamps
+import cProfile, pstats, io
 logInterface = bottle.Bottle()
 
 # The index page, just returns a document.
@@ -29,6 +30,20 @@ def answerQuery():
     stop = TimeStamps.convertDate(dstop, tstop)
     # Pass that and the actual query string to the database and formatter
     return getWebTable(query, start, stop)
+
+@logInterface.route('/custs.json')
+def custsJson():
+    #pr = cProfile.Profile()
+    #pr.enable()
+    #a = getCustJson()
+    #pr.disable()
+    #s = io.StringIO()
+    #sortby = 'cumulative'
+    #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    #ps.print_stats()
+    #print(s.getvalue())
+    #return a
+    return getCustJson()
 
 @logInterface.route('/userProfiles')
 def userProfiles():

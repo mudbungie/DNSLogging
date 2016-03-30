@@ -5,7 +5,7 @@ import sqlalchemy as sqla
 
 class FreesideDB(Database):
     def __init__(self, databaseConfig):
-        self.initDB(databaseConfig)
+        self.initDB(databaseConfig, reflect=False)
         tables = ['cust_main']
         self.initTables(tables)
 

@@ -6,7 +6,23 @@ from Config import config
 from DNSLogDB import DNSLogDB
 from RadiusDB import RadiusDB
 from FreesideDB import FreesideDB
+from Customer import FSCustomer
 import json
+
+def getCustJson():
+    # We're going to select every user in Freeside
+    fsdb = FreesideDB(config['databases']['freeside'])
+    custRecords = fsdb.getAllCusts()
+
+    # Then compile all of their JSON into a big string
+    customers = {}
+    for custRecord in custRecords:
+        cust = FSCustomer(custRecord)
+        customers[cust.custnum] = cust.names
+    jsonComp = json.dumps(customers)
+    return jsonComp
+
+### The following classes are for a legacy implementation. I entend to reuse them.
 
 class UserProfile:
     # Class that gathers and compiles information regarding a single user 

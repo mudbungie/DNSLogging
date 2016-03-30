@@ -12,16 +12,17 @@ class Database:
         # Defined in child classes, pertains to tables they use
         self.initTables()
 
-    def initDB(self, databaseConfig):
+    def initDB(self, databaseConfig, reflect=True):
         # Open the database with the info in the config
         self.dbname = databaseConfig['dbname']
         self.dbtype = databaseConfig['dbtype']
         self.host = databaseConfig['host']
         self.user = databaseConfig['user']
         self.password = databaseConfig['password']
+        self.reflect = reflect
         self.connect()
     
-    def connect(self):
+    def connect(self, reflect=True):
         # Construct a string out of all of this data
         if self.dbtype == 'postgresql':
             prefix = 'postgresql+psycopg2://'
@@ -35,7 +36,8 @@ class Database:
                                         ])
         self.connection = sqla.create_engine(connectionString)
         self.metadata = sqla.MetaData(self.connection)
-        self.metadata.reflect()
+        if self.reflect:
+            self.metadata.reflect()
 
     def initTable(self, tableName):
         # Didn't realize that I'd end up doing this so many times
