@@ -30,6 +30,8 @@ def matchIP(string):
 
 def searchRecordsByIP(ip, start, stop):
     dnslogdb = DNSLogDB(config['databases']['dnslog'])
+    print(start)
+    print(stop)
     records = dnslogdb.getRecordsByIP(ip, start, stop)
     #htmlFormatRecords(records)
     return records

@@ -72,3 +72,8 @@ class LogFile:
         # Delete the file
         self.purgeWorkingFile()
         return True
+    def digestFucked(self):
+        self.workingFileName = self.logFileName
+        self.updateRadiusData()
+        self.parseWorkingFile()
+        self.purgeWorkingFile()

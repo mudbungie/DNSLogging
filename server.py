@@ -28,6 +28,8 @@ def answerQuery():
     # Then convert it out of the strings that you get from the web
     start = TimeStamps.convertDate(dstart, tstart)
     stop = TimeStamps.convertDate(dstop, tstop)
+    print('start', start)
+    print('stop', stop)
     # Pass that and the actual query string to the database and formatter
     return getWebTable(query, start, stop)
 
