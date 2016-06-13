@@ -84,7 +84,7 @@ class Database:
 
     def getCustNum(self, mac):
         #FIXME This is deprecated; would work fine, but the IO latency on that
-        # database is extreme, so user getRadiusData instead
+        # database is extreme, so use getRadiusData instead
 
         # When connected to the RADIUS database, returns a freeside custnum
         tableName = 'username_mac'

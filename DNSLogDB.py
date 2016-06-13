@@ -84,9 +84,16 @@ class DNSLogDB(Database):
         print(query)
         return self.connection.execute(query)
 
+    def getRecordsByTarget(self, target):
+        table = self.tables['dnslog']
+        where = table.select().where(table.c.request == target).\
+            order_by(table.c.querytime.desc())
+        return self.connection.execute(where)
+
     def getRecordsByCustnum(self, custnum):
         table = self.tables['dnslog']
-        where = table.select().where(table.c.custnum == custnum).order_by(table.c.querytime.desc())
+        where = table.select().where(table.c.custnum == custnum).\
+            order_by(table.c.querytime.desc())
         return self.connection.execute(where)
 
     def getRecordsByCustnums(self, custnums, start=None, stop=None):
