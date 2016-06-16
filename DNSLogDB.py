@@ -13,7 +13,11 @@ class DNSLogDB(Database):
     def insertDNSRecord(self, data):
         # Simple helper mask, so that log objects don't need to know table 
         # structure.
-        self.insertIntoTable(data, self.tables['dnslog'])
+        try:
+            self.insertIntoTable(data, self.tables['dnslog'])
+        except sqla.exc.DataError:
+            print(data)
+            raise
 
     def getMacs(self):
         # I spend a lot of time querying for MAC addresses, so I'm going to

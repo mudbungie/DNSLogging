@@ -39,9 +39,11 @@ class LogFile:
                     process.send_signal(psutil.signal.SIGHUP)
             except psutil.NoSuchProcess:
                 pass
+
     def parseWorkingFile(self):
         # Break the file into lines, make LogEntry objects out of it
-        with open(self.workingFileName, 'r') as workingFile:
+        with open(self.workingFileName, 'r', 
+            errors='surrogateescape') as workingFile:
             for line in workingFile:
                 try:
                     # Read the log file
@@ -53,8 +55,11 @@ class LogFile:
                     # Insert record
                     log.commit(self.database)
                 except NotADNSRecord:
-                    # In case of any untoward data
-                    pass
+                    # In case of any untoward data, log it.
+                    with open(self.logFileName + '.error', 'a',
+                        errors='surrogateescape') as errorFile:
+                        errorFile.write(line)
+
     def purgeWorkingFile(self):
         os.remove(self.workingFileName)
         # In case you want to preserve the original logs for debugging
