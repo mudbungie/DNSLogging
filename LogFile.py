@@ -13,6 +13,8 @@ import psutil
 # FIXME delete; just here for some diagnostics
 from datetime import datetime
 
+import sqlalchemy.exc
+
 from LogEntry import FileLogEntry, NotADNSRecord
 
 class LogFile:
@@ -69,7 +71,10 @@ class LogFile:
         self.radiusData = self.radiusdb.getMacCustIdMapping()
     def digestFile(self):
         # Update the RADIUS data correlating macs to custids
-        self.updateRadiusData()
+        try:
+          self.updateRadiusData()
+        except sqlalchemy.exc.OperationalError:
+          print('Radius data update failure')
         # Move the file to a working location
         self.moveToWorkingFile()
         # Read everything into LogEntries

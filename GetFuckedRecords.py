@@ -13,7 +13,7 @@ if __name__ == '__main__':
     dnslogdb = DNSLogDB(config['databases']['dnslog'])
     radiusdb = RadiusDB(config['databases']['radius'])
     #dnslogfile = LogFile(config['inputs']['logFile'], dnslogdb, radiusdb)
-    dnslogfile = LogFile('/data/ko/rsyslog/dnslog.log.unfinished', dnslogdb, radiusdb)
+    dnslogfile = LogFile('/data/ko/rsyslog/dnslog.log.backlog', dnslogdb, radiusdb)
     dnslogfile.digestFucked()
     sleep(1)
     print('You\'re finally done with this shitstorm. Now stop trusting people to not restart things without telling you.')
